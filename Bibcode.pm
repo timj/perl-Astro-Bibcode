@@ -51,6 +51,7 @@ my %CLASS = (
 #  rept   Reports
 #  meet   Meeting
 my %CLASS_ADS = (
+		 proc => 'conference proceeding', # Alias for "conf"
 		 book => 'book',
 		 work => 'workshop',
 		 conf => 'conference proceeding',
@@ -377,8 +378,18 @@ sub class {
   # if confcode is defined but flag is not, we are really a recurring "conf"
   return "recurring conference" if defined $confcode && !$flag;
 
-  # Default state
-  return "periodical" unless length($flag);
+  # Sometimes a blank classflag simply means that ADS is lying...
+  # rather than it being a "periodical"
+  if (!length($flag)) {
+    my $journal = $self->journal;
+    if ($journal =~ /thesi/i) {
+      # it is really a thesis
+      return "thesis";
+    } else {
+      # no hint - use periodical
+      return "periodical";
+    }
+  }
 
   if (exists $CLASS{$flag}) {
     return $CLASS{$flag};
@@ -395,11 +406,15 @@ Returns undef if this bibcode is not associated with a conference.
 
   $confcode = $bib->confcode;
 
+In some cases (eg 2000immm.proc...77G), a "proc" classification
+is used when the ADS standard seems to imply "conf" instead.
+This is taken into account when returning the confcode.
+
 =cut
 
 sub confcode {
   my $self = shift;
-  my $bibcode = $self->bibcode;   # For ADS conference proceedings translation
+  my $bibcode = $self->bibcode(); # For ADS conference proceedings translation
 
   # Force read of DATA segment
   $self->_populate_journals unless keys %CONF_ADS;
@@ -414,6 +429,13 @@ sub confcode {
     # try ADS conference lookup without the year prefix
     $confcode = substr($bibcode,4,9);
 
+  } elsif ($bibcode =~ /proc/) {
+    # if we have a .proc see whether .conf matches anywhere
+    my $c = $bibcode;
+    $c =~ s/proc/conf/;
+    if (exists $CONF_ADS{substr($c,0,13)}) {
+      $confcode = substr($c,0,13);
+    }
   }
 
   return $confcode;
@@ -542,7 +564,7 @@ will be required.
 sub _construct_bibcode {
   my $self = shift;
 
-  croak "Bibcode construction is not yet implemented. It may be hard.";
+  Carp::confess "Bibcode construction is not yet implemented. It may be hard.";
 
 }
 
@@ -583,14 +605,25 @@ sub _verify_journalcode {
 
 =item B<_verify_volume>
 
-Check that the volume is okay.
+Check that the volume and class are okay.
 
 In scalar context returns the verified string (with leading
 dots removed).
 
+  ($class, $volume) = $bib->_verify_volume( $v );
+  $v = $bib->_verify_volume($v);
+
 In list context returns two values. First is the classification
 flag (blank string for a periodical), second is the volume number
 (leasing zeroes removed).
+
+Note that since ADS does not seem to use the classification
+code as presented in the reference documentation, this is a bit
+of a hack (eg a Thesis would be expected to have class = T but
+instead simply uses PhDT in the journal name and not the university).
+
+This means that a blank volume and class are okay and the
+class needs to be hacked in higher up.
 
 =cut
 
@@ -598,8 +631,16 @@ sub _verify_volume {
   my $self = shift;
   my $vol = shift;
 
+  # Second character is important so we need to get that before
+  # cleaning
+  my $second = substr($vol,1,1);
+
+
   # Clean the string
   $vol = _clean_string( $vol, 'R' );
+
+  # empty is okay [need to guess later on]
+  return (wantarray ? ('', '') : $vol) unless $vol;
 
   # Get standard classification codes
   my $classes = join( "", keys %CLASS);
@@ -611,8 +652,9 @@ sub _verify_volume {
   if ($vol =~ /^\d+$/) {
     # periodical. Test calling context
     return (wantarray ? ('',$vol) : $vol );
-  } elsif ($vol =~ /^([$classes])(\d\d)$/) {
+  } elsif ($vol =~ /([$classes])(\d\d)$/) {
     # We are a classification other than a published journal
+    # with multi-volume
     my $c = $1;
     my $num = $2;
     # strip leading zero
@@ -621,6 +663,9 @@ sub _verify_volume {
     # return the result (checking for context)
     return (wantarray ? ($c, $num) : $vol);
 
+  } elsif ($second =~ /^([$classes])$/) {
+    my $class = $1;
+    return (wantarray ? ($class, '') : $vol );
   } elsif ($vol =~ /^($adsmatch)$/) {
     return (wantarray ? ($1, '') : $vol);
   }
@@ -638,6 +683,8 @@ Verify the misc field which is used to break ambiguity.
  A-K   issue designations within same volume
  Q-Z   articles on same page
  A-Z   For theses, first initial of author
+ E     "ephemeral". These are temporary bibcodes
+       submitted prior to publication [ADS-specific]
 
 Fundamentally, any letter matches or a ".".
 
@@ -799,6 +846,12 @@ D. Egret and M. A. Albrecht (Eds), Kluwer Acad. Publ.
 ADS seems to use non-standard bibcodes for meetings and conferences:
 
   http://adsabs.harvard.edu/abs_doc/conferences.html
+
+ADS Journal codes are here:
+
+  http://adsabs.harvard.edu/abs_doc/all_journals.html
+
+but are not currently used.
 
 =head1 NOTES
 
