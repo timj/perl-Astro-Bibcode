@@ -3,7 +3,7 @@
 # Simple test of bibcode parsing
 
 use strict;
-use Test::More tests => 24;
+use Test::More tests => 33;
 
 require_ok( 'Astro::Bibcode' );
 
@@ -13,6 +13,26 @@ isa_ok( $bib, "Astro::Bibcode");
 
 # Set of bibcodes to verify
 my %BIB = (
+	   '1996PhDT........42J' => {
+				     year => 1996,
+				     journalcode => 'PhDT',
+				     initial => 'J',
+				     class => 'thesis',
+				    },
+	   '2000immm.proc...77G' => {
+				     year => 2000,
+				     journalcode => 'immm',
+				     class => 'conference proceeding',
+				    },
+#	   '2002yCat..33851014C' => {
+#				     year => 2002,
+#				     initial => 'C',
+#				     class => 'catalog',
+#		 },
+#	   '2001AAS...19915601S' => {
+#				     year => 2001,
+#				     journalcode => 'AAS',
+#				    },
 	   '1999A&amp;A...345..949C' => {
 					 year => 1999,
 					 volume => 345,
@@ -43,13 +63,26 @@ my %BIB = (
 
 # loop over bibcodes
 for my $bcode (keys %BIB) {
-  ok( $bib->bibcode( $bcode ), "store bibcode $bcode");
+  my $retval = $bib->bibcode( $bcode );
+  ok( $retval, "store bibcode $bcode");
 
-  for my $key (keys %{$BIB{$bcode}}) {
-    my $data = $bib->$key;
-    is($bib->$key, $BIB{$bcode}->{$key}, "Compare $key");
+  SKIP: {
+      skip "No object created", scalar keys %{$BIB{$bcode}}
+         unless $retval;
+
+      # only if good status
+      for my $key (keys %{$BIB{$bcode}}) {
+	my $data = $bib->$key();
+	is($bib->$key, $BIB{$bcode}->{$key}, "Compare $key");
+      }
+    }
+
+  if ($retval) {
+    prt($bib->summary) ;
+  } else {
+    prt("No object to summarise for bibcode $bcode");
   }
-  prt($bib->summary);
+
 }
 
 exit;
