@@ -838,7 +838,13 @@ L<Astro::ADS>
 
 1;
 
+# Note that some entries have been added that were not found on
+# the CDS list but were found in some papers on ADS
+#
+#   OLEB
+#
 __DATA__
+OLEB    Origins of Life and Evolution of the Biosphere
 A&A     Astronomy and Astrophysics
 AAA     Astronomy and Astrophysics Abstracts, Heidelberg
 AAfz    Astrometriya i Astrofizika. Respublikanskij Mezhvedomstvennyj Sbornik
