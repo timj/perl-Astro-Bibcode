@@ -20,6 +20,8 @@ Note that the module itself is quite large due to the inclusion
 of the journal and conference proceedings lookup tables required to
 convert a journal code to its full length.
 
+A simple bibcode verification utility is provided (verifybib).
+
 Installation
 ------------
 
@@ -29,6 +31,11 @@ Installs in the normal manner. No external modules are required.
   make
   make test
   make install
+
+History
+-------
+
+  v0.03  First public release (Aug 2004)
 
 Author
 ------

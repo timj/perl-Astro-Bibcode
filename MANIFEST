@@ -3,4 +3,5 @@ Bibcode.pm
 README
 Makefile.PL
 t/parse.t
-META.yml                                 Module meta-data (added by MakeMaker)
+verifybib
+META.yml
