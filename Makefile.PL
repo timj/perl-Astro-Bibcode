@@ -7,6 +7,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
         'NAME' => 'Astro::Bibcode',
         'VERSION_FROM' => 'Bibcode.pm',
+	EXE_FILES => [ 'verifybib' ],
 	($] >= 5.005 ?    ## Add these new keywords supported since 5.005
 	 (ABSTRACT_FROM => 'Bibcode.pm',
 	  AUTHOR     => 'Tim Jenness <tjenness@cpan.org>') : ()),
