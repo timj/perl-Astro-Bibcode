@@ -28,7 +28,7 @@ use warnings::register;
 use Carp;
 
 use vars qw/ $VERSION /;
-$VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
+$VERSION = 1.0;
 
 # Some lookup tables
 
