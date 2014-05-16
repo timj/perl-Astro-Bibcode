@@ -58,6 +58,7 @@ my %CLASS_ADS = (
 		 symp => 'symposium',
 		 rept => 'report',
 		 meet => 'meeting',
+                 soft => 'software',
 		);
 
 # These are populated dynamically as required
@@ -258,6 +259,7 @@ and also from ADS:
      symp => 'symposium'
      rept => 'report'
      meet => 'meeting'
+     soft => 'software'
 
 Note that a null string is used to indicate a periodical.
 
@@ -501,6 +503,10 @@ sub verify_bibcode {
   # Check length
   return unless length($bibcode) == 19;
 
+  # The definition of "valid" is that the bibcode matches
+  # this regex from an ADS verifier
+  return unless $bibcode =~ /(\d{4}\D\S{13}[A-Z.:])/;
+
   # Rather than one enormous pattern match, split the string
   # into fixed length chunks
   my $yyyy = substr($bibcode,0,4);
@@ -525,16 +531,14 @@ sub verify_bibcode {
   $parts{page} = $self->_verify_page( $pppp );
   $parts{initial} = $self->_verify_initial( $a );
 
-
-  # Ordinarily we would return if any of the values in the hash
-  # are undef. There is a special case if $a is "%" since this
-  # indicates that some of them may not match. In this case
-  # we do what we can.
+  # The ADS verifier indicates that we might not recognize all
+  # parts of the bibcode. We mandate that we must have a year and
+  # journal. For some codes the misc and class flag fields may not
+  # be what we currently expect. If $a was "%" it means all bets are off.
 
   if ($a ne "%") {
-    for my $v (values %parts) {
-      return unless defined $v;
-    }
+    return unless defined $parts{year};
+    return unless defined $parts{journalcode};
   }
 
   # Return the answer
